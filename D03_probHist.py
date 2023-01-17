@@ -30,7 +30,7 @@ def plotTrace(traces, title, saveLoc, show=False):
 
 #######input path and file names#######
 round = '3rdpass'
-path = f'DeepLearning/data/{round}/'
+path = f'Code/data/{round}/'
 RCR = np.load(os.path.join(path, "ReflCR_67950events_part0.npy"))[10000:,0:4] #input a subset of the data here so that you can validate on the other set
 #Noise = np.load(os.path.join(path, "Station13_Data_500000events_part0.npy"))[67950:,0:4] #make sure the signal and noise subset of data are the same size
 Noise = np.load(os.path.join(path, "Station13_Data_500000events_part0.npy"))[10000:,0:4] #make sure the signal and noise subset of data are the same size
@@ -42,7 +42,7 @@ Noise = np.reshape(Noise, (Noise.shape[0], Noise.shape[1],Noise.shape[2],1))
 
 
 #######input path to trained h5 model#######
-model = keras.models.load_model(f'DeepLearning/h5_models/{round}_trained_CNN_1l-10-8-10_do0.5_fltn_sigm_valloss_p4_measNoise0-20k_0-5ksigNU-Scaled_shuff_monitortraining_0.h5')
+model = keras.models.load_model(f'Code/h5_models/{round}_trained_CNN_1l-10-8-10_do0.5_fltn_sigm_valloss_p4_measNoise0-20k_0-5ksigNU-Scaled_shuff_monitortraining_0.h5')
 
 prob_RCR = model.predict(RCR)
 prob_Noise = model.predict(Noise)
@@ -53,11 +53,11 @@ if plotRandom == True:
         if iE % 10000 == 0:
             output = prob_Noise[iE][0]
             print(f'output {output}')
-            plotTrace(Noi, f"Noise {iE}, Output {output:.2f}",f"DeepLearning/data/3rdpass/Noise_{iE}_Output_{output:.2f}.png")
+            plotTrace(Noi, f"Noise {iE}, Output {output:.2f}",f"Code/data/3rdpass/Noise_{iE}_Output_{output:.2f}.png")
     for iE, rcr in enumerate(RCR):
         if iE % 1000 == 0:
             output = prob_RCR[iE][0]
-            plotTrace(rcr, f"RCR {iE}, Output {output:.2f}",f"DeepLearning/data/3rdpass/RCR_{iE}_Output_{output:.2f}.png")
+            plotTrace(rcr, f"RCR {iE}, Output {output:.2f}",f"Code/data/3rdpass/RCR_{iE}_Output_{output:.2f}.png")
 
 quit()
 

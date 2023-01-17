@@ -16,7 +16,7 @@ from keras.utils import np_utils
 import random
 
 round = '3rdpass'
-path = f'DeepLearning/data/{round}/'
+path = f'Code/data/{round}/'
 #Take first 750 events, only first 4 channels are being used
 #RCR = np.load(os.path.join(path, "ReflCR_7436events_part0.npy"))[0:7000,0:4] #input a subset of the data here so that you can validate on the other set
 RCR = np.load(os.path.join(path, "ReflCR_67950events_part0.npy"))[0:10000,0:4] #input a subset of the data here so that you can validate on the other set
@@ -83,7 +83,7 @@ def training(j):
   model.summary()
 
   #input the path and file you'd like to save the model as (in h5 format)
-  model.save(f'DeepLearning/h5_models/{round}_trained_CNN_1l-10-8-10_do0.5_fltn_sigm_valloss_p4_measNoise0-20k_0-5ksigNU-Scaled_shuff_monitortraining_{j}.h5')
+  model.save(f'Code/h5_models/{round}_trained_CNN_1l-10-8-10_do0.5_fltn_sigm_valloss_p4_measNoise0-20k_0-5ksigNU-Scaled_shuff_monitortraining_{j}.h5')
   
 #can increase the loop for more trainings is you want to see variation
 for j in range(1):
