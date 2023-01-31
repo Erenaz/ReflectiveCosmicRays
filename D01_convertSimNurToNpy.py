@@ -187,7 +187,7 @@ converter(NuFiles, 'Nu', saveChannels, 1, det_nu)
 
 #Existing data conversion
 
-station13_path = "../leshanz/data_for_others/2022_reflected_cr_search/data/station_13/"
+station13_path = "../leshanz/data_for_others/2022_reflected_cr_search/data/station_13/" # change the station ID to choose different series station.
 
 DataFiles = []
 for filename in os.listdir(station13_path):
