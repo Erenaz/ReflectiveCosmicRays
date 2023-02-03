@@ -59,7 +59,22 @@ if plotRandom == True:
             output = prob_RCR[iE][0]
             plotTrace(rcr, f"RCR {iE}, Output {output:.2f}",f"Code/data/3rdpass/RCR_{iE}_Output_{output:.2f}.png")
 
-quit()
+# Plot the candidate
+""
+plotRandom = True
+if plotRandom == True:
+    for iE, Noi in enumerate(Noise):
+        if iE % 10000 == 0:
+            output = prob_Noise[iE][0]
+            if output > 0.95:
+                print(f'output {output}')
+                plotTrace(Noi, f"Noise {iE}, Output {output:.2f}",f"Code/data/3rdpass/Noise_{iE}_Output_{output:.2f}.png")
+    for iE, rcr in enumerate(RCR):
+        if iE % 1000 == 0:
+            output = prob_RCR[iE][0]
+            if output > 0.95:
+                plotTrace(rcr, f"RCR {iE}, Output {output:.2f}",f"Code/data/3rdpass/RCR_{iE}_Output_{output:.2f}.png")
+""
 
 """
 mask = np.zeros_like(prob_Nu).astype(bool)
