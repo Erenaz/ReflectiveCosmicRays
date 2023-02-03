@@ -15,21 +15,22 @@ from keras.layers import Conv2D, MaxPooling2D, Conv1D, MaxPooling1D
 from keras.utils import np_utils
 import random
 
-round = '3rdpass'
+round = '4thpass'
 path = f'Code/data/{round}/'
-#Take first 750 events, only first 4 channels are being used
-#RCR = np.load(os.path.join(path, "ReflCR_7436events_part0.npy"))[0:7000,0:4] #input a subset of the data here so that you can validate on the other set
-RCR = np.load(os.path.join(path, "ReflCR_67950events_part0.npy"))[0:10000,0:4] #input a subset of the data here so that you can validate on the other set
+RCR = np.load(os.path.join(path, "ReflCR_67950events_part0.npy"))[0:10000,0:4] 
+#input a subset of the data here so that you can validate on the other set
 TrainCut = len(RCR)
-#Nu = np.load(os.path.join(path, "Nu_283events.npy"))[0:100,0:4] #make sure the signal and noise subset of data are the same size
-Noise = np.load(os.path.join(path, "Station13_Data_500000events_part0.npy"))[0:10000,0:4] #make sure the signal and noise subset of data are the same size
-print(Noise.shape)
+Noise = np.load(os.path.join(path, "Station13_Data_500000events_part0.npy"))[0:10000,0:4] 
+#make sure the signal and noise subset of data are the same size
+print('NoiseShape1=', Noise.shape)
 index = np.arange(0, len(Noise), 1)
-new_index = random.shuffle(index)
+np.random.shuffle(index)
+new_index = index
 Noise = Noise[new_index]
-print(Noise.shape)
-Noise = Noise[0:TrainCut,0:4]
-print(Noise.shape)
+print('NoiseShape2=', Noise.shape)
+Noise = Noise[0:TrainCut,:]
+print('NoiseShape3=', Noise.shape)
+
 
 
 #make signal the same shape as the noise data, if needed
