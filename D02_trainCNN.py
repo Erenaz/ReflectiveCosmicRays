@@ -2,7 +2,6 @@
 #May need much larger training sets depending upon difficulty of problem
 #train on 75%, validate on 25%, see how good the result is
 
-
 import os
 import glob
 from matplotlib import pyplot as plt
