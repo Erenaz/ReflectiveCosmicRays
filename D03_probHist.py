@@ -29,11 +29,24 @@ def plotTrace(traces, title, saveLoc, show=False):
 
 
 #######input path and file names#######
-round = '3rdpass'
+round = '4thpass'
 path = f'Code/data/{round}/'
-RCR = np.load(os.path.join(path, "ReflCR_67950events_part0.npy"))[10000:,0:4] #input a subset of the data here so that you can validate on the other set
+
+# Get a list of all the RCR files
+RCR_files = glob(os.path.join(path, "ReflCR_*_part*.npy"))
+RCR = np.empty((0, 4))
+for file in RCR_files:
+    RCR = np.concatenate((RCR, np.load(file)[10000:,0:4]))
+    
+# Get a list of all the noise files
+noise_files = glob(os.path.join(path, "Station*_Data_*_part*.npy")) # Change the station ID to pair the station file.
+noise = np.empty((0, 4))
+for file in noise_files:
+    noise = np.concatenate((noise, np.load(file)[10000:,0:4]))
+
+#RCR = np.load(os.path.join(path, "ReflCR_67950events_part0.npy"))[10000:,0:4] #input a subset of the data here so that you can validate on the other set
 #Noise = np.load(os.path.join(path, "Station13_Data_500000events_part0.npy"))[67950:,0:4] #make sure the signal and noise subset of data are the same size
-Noise = np.load(os.path.join(path, "Station13_Data_500000events_part0.npy"))[10000:,0:4] #make sure the signal and noise subset of data are the same size
+#Noise = np.load(os.path.join(path, "Station13_Data_500000events_part0.npy"))[10000:,0:4] #make sure the signal and noise subset of data are the same size
 #RCR = np.load(os.path.join(path, "ReflCR_499events.npy"))[100:,0:4] #validate on the other set of data
 #Nu = np.load(os.path.join(path, "Nu_283events.npy"))[100:,0:4]
 
