@@ -17,11 +17,24 @@ import random
 
 round = '4thpass'
 path = f'Code/data/{round}/'
-RCR = np.load(os.path.join(path, "ReflCR_67950events_part0.npy"))[0:10000,0:4] 
+
+# Get a list of all the RCR files
+RCR_files = glob(os.path.join(path, "ReflCR_*_part*.npy"))
+RCR = np.empty((0, 4))
+for file in RCR_files:
+    RCR = np.concatenate((RCR, np.load(file)[10000:,0:4]))
+#RCR = np.load(os.path.join(path, "ReflCR_67950events_part0.npy"))[0:10000,0:4] 
 #input a subset of the data here so that you can validate on the other set
 TrainCut = len(RCR)
-Noise = np.load(os.path.join(path, "Station13_Data_500000events_part0.npy"))[0:10000,0:4] 
+
+# Get a list of all the noise files
+noise_files = glob(os.path.join(path, "Station13_Data_*_part*.npy"))
+noise = np.empty((0, 4))
+for file in noise_files:
+    noise = np.concatenate((noise, np.load(file)[10000:,0:4]))
+#Noise = np.load(os.path.join(path, "Station13_Data_500000events_part0.npy"))[0:10000,0:4] 
 #make sure the signal and noise subset of data are the same size
+
 print('NoiseShape1=', Noise.shape)
 index = np.arange(0, len(Noise), 1)
 np.random.shuffle(index)
