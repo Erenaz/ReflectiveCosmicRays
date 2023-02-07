@@ -19,7 +19,7 @@ path = f'Code/data/{round}/'
 
 # Get a list of all the RCR files
 RCR_files = glob(os.path.join(path, "ReflCR_*_part*.npy"))
-RCR = np.empty((0, 4))
+RCR = np.empty([0, 4])
 
 print(f'RCR shape {np.shape(RCR)}')
 
@@ -31,7 +31,7 @@ TrainCut = round(len(RCR) * 0.75)
 
 # Get a list of all the noise files
 noise_files = glob(os.path.join(path, "Station*_Data_*_part*.npy")) # Change the station ID to pair the station file.
-noise = np.empty((0, 4))
+noise = np.empty([0, 4])
 
 print(f'Noise shape {np.shape(noise)}')
 
