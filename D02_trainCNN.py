@@ -28,7 +28,7 @@ for file in RCR_files:
 TrainCut = len(RCR)
 
 # Get a list of all the noise files
-noise_files = glob(os.path.join(path, "Station13_Data_*_part*.npy"))
+noise_files = glob(os.path.join(path, "Station*_Data_*_part*.npy"))
 noise = np.empty((0, 4))
 for file in noise_files:
     noise = np.concatenate((noise, np.load(file)[10000:,0:4]))
