@@ -30,13 +30,13 @@ for file in RCR_files:
 TrainCut = round(len(RCR) * 0.75)
 
 # Get a list of all the noise files
-noise_files = glob(os.path.join(path, "Station*_Data_*_part*.npy")) # Change the station ID to pair the station file.
-noise = np.empty((0, 4,256))
+Noise_files = glob(os.path.join(path, "Station*_Data_*_part*.npy")) # Change the station ID to pair the station file.
+Noise = np.empty((0, 4,256))
 
-print(f'Noise shape {np.shape(noise)}')
+print(f'Noise shape {np.shape(Noise)}')
 
-for file in noise_files:
-    noise = np.concatenate((noise, np.load(file)[0:,0:4]))
+for file in Noise_files:
+    Noise = np.concatenate((Noise, np.load(file)[0:,0:4]))
     
 
 #Noise = np.load(os.path.join(path, "Station13_Data_500000events_part0.npy"))[0:10000,0:4] 
