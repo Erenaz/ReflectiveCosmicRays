@@ -19,7 +19,7 @@ path = f'Code/data/{round}/'
 
 # Get a list of all the RCR files
 RCR_files = glob(os.path.join(path, "ReflCR_*_part*.npy"))
-RCR = np.empty((0, 4, 256)
+RCR = np.empty((0, 4, 256))
 
 print(f'RCR shape {np.shape(RCR)}')
 
