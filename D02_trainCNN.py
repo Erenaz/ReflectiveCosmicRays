@@ -51,8 +51,6 @@ print('NoiseShape2=', Noise.shape)
 Noise = Noise[0:TrainCut,0:3]
 print('NoiseShape3=', Noise.shape)
 
-
-
 #make signal the same shape as the noise data, if needed
 #Reuse one set multiple times to match larger dataset of the other
 # signal = np.vstack((signal,signal,signal,signal))
@@ -63,6 +61,7 @@ print(RCR.shape)
 print(Noise.shape)
 
 x = np.vstack((RCR, Noise))  # shape is (200000, 1, 240)
+print('xShape=', x.shape)
 
 n_samples = x.shape[2]
 n_channels = x.shape[1]
