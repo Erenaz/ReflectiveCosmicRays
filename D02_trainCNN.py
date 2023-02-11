@@ -48,7 +48,7 @@ np.random.shuffle(index)
 new_index = index
 Noise = Noise[new_index]
 print('NoiseShape2=', Noise.shape)
-Noise = Noise[0:TrainCut,0:3]
+Noise = Noise[0:TrainCut,0:4]
 print('NoiseShape3=', Noise.shape)
 
 #make signal the same shape as the noise data, if needed
