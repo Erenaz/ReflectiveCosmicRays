@@ -23,11 +23,11 @@ RCR_files = glob(os.path.join(path, "ReflCR_*_part*.npy"))
 RCR = []
 
 for file in RCR_files:
-    if RCR == []:
-        RCR = np.load(file)
-    else:
-        RCR = np.append((RCR, np.load(file)), axis=0)
-    f.close()
+    with open(file, 'rb') as f:
+        if RCR == []:
+            RCR = np.load(f)
+        else:
+            RCR = np.concatenate((RCR, np.load(f)))
 
 #input a subset of the data here so that you can validate on the other set
 TrainCut = int(math.ceil(len(RCR) * 0.75))
@@ -37,11 +37,12 @@ Noise_files = glob(os.path.join(path, "Station*_Data_*_part*.npy")) # Change the
 Noise = []
 
 for file in Noise_files:
-    if Noise == []:
-        Noise = np.load(file)
-    else:
-        Noise = np.append((Noise, np.load(file)), axis=0)
-    f.close()
+    with open(file, 'rb') as data:
+        if Noise == []:
+            Noise = np.load(data)
+        else:
+            Noise = np.concatenate((Noise, np.load(data)))
+
 #make sure the signal and noise subset of data are the same size
 
 print('NoiseShape1=', Noise.shape)
