@@ -13,33 +13,35 @@ from keras.layers import Dense, Dropout, Flatten, Reshape, GlobalAveragePooling1
 from keras.layers import Conv2D, MaxPooling2D, Conv1D, MaxPooling1D
 from keras.utils import np_utils
 import random
+import math
 
 round = '4thpass'
 path = f'Code/data/{round}/'
 
 # Get a list of all the RCR files
 RCR_files = glob(os.path.join(path, "ReflCR_*_part*.npy"))
-RCR = np.empty((0, 4, 256))
-
-print(f'RCR shape {np.shape(RCR)}')
+RCR = []
 
 for file in RCR_files:
-    RCR = np.concatenate((RCR, np.load(file)[0:,0:4]))
-#RCR = np.load(os.path.join(path, "ReflCR_67950events_part0.npy"))[0:10000,0:4] 
+    if RCR == []:
+        RCR = np.load(file)
+    else:
+        RCR = np.concatenate((RCR, np.load(file)), axis=0)
+    del np.load(file)
+
 #input a subset of the data here so that you can validate on the other set
-TrainCut = round(len(RCR) * 0.75)
+TrainCut = int(math.ceil(len(RCR) * 0.75))
 
 # Get a list of all the noise files
 Noise_files = glob(os.path.join(path, "Station*_Data_*_part*.npy")) # Change the station ID to pair the station file.
-Noise = np.empty((0, 4, 256))
-
-print(f'Noise shape {np.shape(Noise)}')
+Noise = []
 
 for file in Noise_files:
-    Noise = np.concatenate((Noise, np.load(file)[0:,0:4]))
-    
-
-#Noise = np.load(os.path.join(path, "Station13_Data_500000events_part0.npy"))[0:10000,0:4] 
+    if Noise == []:
+        Noise = np.load(file)
+    else:
+        Noise = np.concatenate((Noise, np.load(file)), axis=0)
+    del np.load(file)
 #make sure the signal and noise subset of data are the same size
 
 print('NoiseShape1=', Noise.shape)
