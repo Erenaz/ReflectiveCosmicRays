@@ -26,8 +26,8 @@ for file in RCR_files:
     if RCR == []:
         RCR = np.load(file)
     else:
-        RCR = np.concatenate((RCR, np.load(file)), axis=0)
-    del np.load(file)
+        RCR = np.append((RCR, np.load(file)), axis=0)
+    f.close()
 
 #input a subset of the data here so that you can validate on the other set
 TrainCut = int(math.ceil(len(RCR) * 0.75))
@@ -40,8 +40,8 @@ for file in Noise_files:
     if Noise == []:
         Noise = np.load(file)
     else:
-        Noise = np.concatenate((Noise, np.load(file)), axis=0)
-    del np.load(file)
+        Noise = np.append((Noise, np.load(file)), axis=0)
+    f.close()
 #make sure the signal and noise subset of data are the same size
 
 print('NoiseShape1=', Noise.shape)
