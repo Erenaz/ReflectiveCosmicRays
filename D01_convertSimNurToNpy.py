@@ -91,8 +91,8 @@ def converter(nurFile, folder, type, save_chans, station_id = 1, blackout=False,
         count = i
         if count % 1000 == 0:
             print(f'{count} events processed...')
-#        if count % max_events == 0 and not count == 0:
-        if count >= max_events:
+        if count % max_events == 0 and not count == 0:
+#        if count >= max_events and not count == 0:
             np.save(f'Code/data/{folder}/{type}_{max_events}events_part{part}.npy', ary)
             part += 1
             ary = np.zeros((max_events, 4, 256))
