@@ -78,16 +78,6 @@ def converter(nurFile, folder, type, save_chans, station_id = 1, blackout=False,
 
 #    station_id = 1
 
-
-    for i, evt in enumerate(template.get_events()):
-
-        #If in a blackout region, skip event
-        station = evt.get_station(station_id)
-        stationtime = station.get_station_time().unix
-        if inBlackoutTime(stationtime, blackoutTimes):
-            continue
-
-
         count = i
         if count % 1000 == 0:
             print(f'{count} events processed...')
@@ -98,6 +88,14 @@ def converter(nurFile, folder, type, save_chans, station_id = 1, blackout=False,
             ary = np.zeros((max_events, 4, 256))
         station = evt.get_station(station_id)
         i = i - max_events * part
+
+    for i, evt in enumerate(template.get_events()):
+
+        #If in a blackout region, skip event
+        station = evt.get_station(station_id)
+        stationtime = station.get_station_time().unix
+        if inBlackoutTime(stationtime, blackoutTimes):
+            continue
 
 #        triggerTimeAdjuster.run(evt, station, det)
         for ChId, channel in enumerate(station.iter_channels(use_channels=save_chans)):
