@@ -121,5 +121,5 @@ def training(j):
   model.save(f'Code/h5_models/{round}_trained_CNN_1l-10-8-10_do0.5_fltn_sigm_valloss_p4_measNoise0-20k_0-5ksigNU-Scaled_shuff_monitortraining_{j}_13.h5')
   
 #can increase the loop for more trainings is you want to see variation
-for j in range(10):
+for j in range(1):
   training(j)
