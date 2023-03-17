@@ -25,29 +25,23 @@ for file in RCR_files:
         else:
             RCR = np.concatenate((RCR, np.load(f)))
 
-TrainCut = int(math.ceil(len(RCR) * 0.75))
+num_RCR_events = len(RCR)
+print('Number of RCR events:', num_RCR_events)
 
-# Get a list of all the noise files
-Noise_files = glob(os.path.join(path, "Station13_Data_*_part*.npy")) # Change the station ID to pair the station file.
-Noise = []
+Noise_files = glob(os.path.join(path, "Station13_Data_*_part*.npy"))
+all_events = []
 
+# Load all events into a list
 for file in Noise_files:
     with open(file, 'rb') as data:
-        if Noise == []:
-            Noise = np.load(data)
-        else:
-            Noise = np.concatenate((Noise, np.load(data)))
+        events = np.load(data)
+        all_events.extend(events)
 
-index = np.arange(0, len(Noise), 1)
-np.random.shuffle(index)
-new_index = index
-Noise = Noise[new_index]
-Noise = Noise[0:TrainCut,0:4]
+# Randomly select the same number of events as RCR from the list
+selected_events = random.sample(all_events, num_RCR_events)
 
-#make signal the same shape as the noise data, if needed
-#Reuse one set multiple times to match larger dataset of the other
-# signal = np.vstack((signal,signal,signal,signal))
-# signal = signal[0:noise.shape[0]]
+# Convert the list of selected events back to a NumPy array
+Noise = np.array(selected_events)
 
 print('RCRShape=', RCR.shape)
 #print(Nu.shape)
