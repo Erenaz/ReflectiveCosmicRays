@@ -72,7 +72,7 @@ def plotTrace(traces, title, saveLoc, show=False):
 def converter(nurFile, folder, type, save_chans, station_id = 1, blackout=False, det=None, plot=False):
     count = 0
     part = 0
-    max_events = 500000
+    max_events = 1000000
     ary = np.zeros((max_events, 4, 256))
     template = NuRadioRecoio.NuRadioRecoio(nurFile)
 
@@ -148,10 +148,11 @@ def converter(nurFile, folder, type, save_chans, station_id = 1, blackout=False,
 
 
 #file = '/Users/astrid/Desktop/st61_deeplearning/data/stn61_2of4trigger_noiseless_processed.nur'
-#ReflCrFiles = ['Code/data/2ndpass/MB_old_100s_Refl_CRs_2500Evts_Noise_True_Amp_True_min0_max500.nur', 'Code/data/2ndpass/MB_old_100s_Refl_CRs_2500Evts_Noise_True_Amp_True_min500_max1000.nur',
-#               'Code/data/2ndpass/MB_old_100s_Refl_CRs_2500Evts_Noise_True_Amp_True_min1000_max1500.nur', 'Code/data/2ndpass/MB_old_100s_Refl_CRs_2500Evts_Noise_True_Amp_True_min1500_max2000.nur']
+#ReflCrFiles = ['Code/data/4thpass/MB_old_100s_Refl_CRs_2500Evts_Noise_True_Amp_True_min0_max500.nur', 'Code/data/4thpass/MB_old_100s_Refl_CRs_2500Evts_Noise_True_Amp_True_min500_max1000.nur',
+#               'Code/data/4thpass/MB_old_100s_Refl_CRs_2500Evts_Noise_True_Amp_True_min1000_max1500.nur', 'Code/data/4thpass/MB_old_100s_Refl_CRs_2500Evts_Noise_True_Amp_True_min1500_max2000.nur']
 folder = "4thpass"
 MB_RCR_path = f"Code/data/{folder}/"
+station = 13  # Change this value to match the station you are working with
 
 ReflCrFiles = []
 for filename in os.listdir(MB_RCR_path):
@@ -163,7 +164,7 @@ for filename in os.listdir(MB_RCR_path):
         ReflCrFiles.append(os.path.join(MB_RCR_path, filename))
 
 saveChannels = [4, 5, 6, 7]
-det = generic_detector.GenericDetector(json_filename=f'configurations/gen2_MB_old_footprint576m_infirn.json', assume_inf=False, antenna_by_depth=False, default_station=1)
+det = generic_detector.GenericDetector(json_filename=f'Config/gen2_MB_old_footprint576m_infirn.json', assume_inf=False, antenna_by_depth=False, default_station=1)
 det.update(datetime.datetime(2018, 10, 1))
 
 converter(ReflCrFiles, folder,'ReflCR', saveChannels, 1, det, plot=False)
@@ -185,14 +186,14 @@ converter(NuFiles, 'Nu', saveChannels, 1, det_nu)
 
 #Existing data conversion
 
-station13_path = "../leshanz/data_for_others/2022_reflected_cr_search/data/station_13/" # change the station ID to choose different series station.
+Station{station}_path = "../leshanz/data_for_others/2022_reflected_cr_search/data/station_{station}/"
 
 DataFiles = []
-for filename in os.listdir(station13_path):
+for filename in os.listdir(Station{station}_path):
     if filename.endswith('_statDatPak.root.nur'):
         continue
     else:
-        DataFiles.append(os.path.join(station13_path, filename))
+        DataFiles.append(os.path.join(Station{station}_path, filename))
 
 saveChannels = [0, 1, 2, 3]
-converter(DataFiles, folder, 'Station13_Data', saveChannels, station_id = 13, blackout=True, plot=False)
+converter(DataFiles, folder, 'Station{station}_Data', saveChannels, station_id=station, blackout=True, plot=False)
