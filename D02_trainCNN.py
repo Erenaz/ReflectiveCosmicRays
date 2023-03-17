@@ -13,35 +13,27 @@ import math
 
 round = '4thpass'
 path = f'Code/data/{round}/'
+station =   # Change this value to match the station you are working with
+
+# Get a list of the RCR files
+RCR_files = glob(os.path.join(path, "ReflCR_67950events_part0.npy"))
+RCR = np.empty((0, 4, 256))
+for file in RCR_files:
+    RCR = np.concatenate((RCR, np.load(file)[0:50000,0:4]))
+
+TrainCut = len(RCR)
 
 # Get a list of all the RCR files
-RCR_files = glob(os.path.join(path, "ReflCR_*_part*.npy"))
-RCR = []
-
-for file in RCR_files:
-    with open(file, 'rb') as f:
-        if RCR == []:
-            RCR = np.load(f)
-        else:
-            RCR = np.concatenate((RCR, np.load(f)))
-
-num_RCR_events = len(RCR)
-print('Number of RCR events:', num_RCR_events)
-
-Noise_files = glob(os.path.join(path, "Station13_Data_*_part*.npy"))
-all_events = []
-
-# Load all events into a list
+Noise_files = glob(os.path.join(path, "Station{station}_Data_*_part*.npy"))
+Noise = np.empty((0, 4, 256))
 for file in Noise_files:
-    with open(file, 'rb') as data:
-        events = np.load(data)
-        all_events.extend(events)
+    Noise = np.concatenate((Noise, np.load(file)[0:50000,0:4]))
 
-# Randomly select the same number of events as RCR from the list
-selected_events = random.sample(all_events, num_RCR_events)
+# Shuffle the station data
+np.random.shuffle(Noise)
 
-# Convert the list of selected events back to a NumPy array
-Noise = np.array(selected_events)
+# Select the same number of events as RCR
+Noise = Noise[:TrainCut, 0:4]
 
 print('RCRShape=', RCR.shape)
 #print(Nu.shape)
@@ -62,9 +54,9 @@ y_train = y_train[s]
 print('XShape=', x_train.shape)
 
 # Split data into training, validation, and test sets
-train_ratio = 0.6
-val_ratio = 0.2
-test_ratio = 0.2
+train_ratio = 0.8
+val_ratio = 0.1
+test_ratio = 0.1
 
 train_size = int(train_ratio * len(x_train))
 val_size = int(val_ratio * len(x_train))
@@ -112,7 +104,7 @@ def training(j):
   model.summary()
 
   #input the path and file you'd like to save the model as (in h5 format)
-  model.save(f'Code/h5_models/{round}_trained_CNN_1l-10-8-10_do0.5_fltn_sigm_valloss_p4_measNoise0-20k_0-5ksigNU-Scaled_shuff_monitortraining_{j}_13.h5')
+      model.save(f'Code/h5_models/{round}_trained_CNN_1l-10-8-10_do0.5_fltn_sigm_valloss_p4_measNoise0-20k_0-5ksigNU-Scaled_shuff_monitortraining_{j}_Station{station}.h5')
   
 #can increase the loop for more trainings is you want to see variation
 for j in range(1):
