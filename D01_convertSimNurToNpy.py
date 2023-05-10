@@ -10,6 +10,7 @@ import NuRadioReco.modules.correlationDirectionFitter
 import NuRadioReco.modules.triggerTimeAdjuster
 import NuRadioReco.modules.channelLengthAdjuster
 from NuRadioReco.framework.parameters import stationParameters as stnp
+from NuRadioReco.framework.parameters import channelParameters as chp
 from NuRadioReco.modules.io import NuRadioRecoio
 import numpy as np
 import os
@@ -68,36 +69,106 @@ def plotTrace(traces, title, saveLoc, show=False):
         plt.savefig(saveLoc, format='png')
     return
 
+def getVrms(nurFile, save_chans, station_id, check_forced=False, max_check=1000, plot_avg_trace=False, saveLoc='plots/'):
+    template = NuRadioRecoio.NuRadioRecoio(nurFile)
 
-def converter(nurFile, folder, type, save_chans, station_id = 1, blackout=False, det=None, plot=False):
+
+    Vrms_sum = 0
+    num_avg = 0
+    if plot_avg_trace:
+        trace_sum = []
+
+    for i, evt in enumerate(template.get_events()):
+        station = evt.get_station(station_id)
+        stationtime = station.get_station_time().unix
+        if inBlackoutTime(stationtime, blackoutTimes):
+            continue
+
+        channelSignalReconstructor.run(evt, station, det)
+        for ChId, channel in enumerate(station.iter_channels(use_channels=save_chans)):
+            Vrms_sum += channel[chp.noise_rms]
+            num_avg += 1
+            if plot_avg_trace:
+                if trace_sum == []:
+                    trace_sum = channel.get_trace()
+                else:
+                    trace_sum += channel.get_trace()
+        
+        if num_avg >= max_check:
+            break
+
+    if plot_avg_trace:
+        plt.plot(trace_sum/num_avg)
+        plt.xlabel('sample', label=f'{Vrms_sum/num_avg:.2f} Average Vrms')
+        plt.legend()
+        plt.savefig(saveLoc + f'stn{station_id}_average_trace.png')
+
+    return Vrms_sum / num_avg
+
+
+        
+
+
+
+def converter(nurFile, folder, type, save_chans, station_id = 1, blackout=False, det=None, plot=False,
+              filter=True, BW=[80*units.MHz, 500*units.MHz], normalize=False, saveTimes=False):
     count = 0
     part = 0
     max_events = 1000000
     ary = np.zeros((max_events, 4, 256))
+    if saveTimes:
+        art = np.zeros(max_events)
     template = NuRadioRecoio.NuRadioRecoio(nurFile)
 
 #    station_id = 1
 
+    #Normalizing will save traces with values of sigma, rather than voltage
+    if normalize:
+        Vrms = getVrms(nurFile, save_chans, station_id)
+        print(f'normalizing to {Vrms} vrms')
+
+
+
     for i, evt in enumerate(template.get_events()):
 
-        count = i
-        if count % 1000 == 0:
-            print(f'{count} events processed...')
-        if count % max_events == 0 and not count == 0:
-            np.save(f'Code/data/{folder}/{type}_{max_events}events_part{part}.npy', ary)
-            part += 1
-            ary = np.zeros((max_events, 4, 256))
-        station = evt.get_station(station_id)
-        i = i - max_events * part
-        
-        
         #If in a blackout region, skip event
         station = evt.get_station(station_id)
         stationtime = station.get_station_time().unix
         if inBlackoutTime(stationtime, blackoutTimes):
             continue
 
-#        triggerTimeAdjuster.run(evt, station, det)
+
+        count = i
+        if count % 1000 == 0:
+            print(f'{count} events processed...')
+#        if count % max_events == 0 and not count == 0:
+#            print(f'just testing number of events...not saving')
+#        continue
+        if count >= max_events:
+            saveName = f'Code/data/{folder}/{type}_{max_events}events_part{part}.npy'
+            print(f'Reached cap, saving events to {saveName}')
+            np.save(saveName, ary)
+            if saveTimes:
+                saveTimes = f'Code/data/{folder}/DateTime_{type}_{max_events}events_part{part}.npy'
+                print(f'Saving times to {saveTimes}')
+                np.save(saveTimes, art)
+            part += 1
+            ary = np.zeros((max_events, 4, 256))
+            if saveTimes:
+                art = np.zeros(max_events)
+        station = evt.get_station(station_id)
+        i = i - max_events * part
+
+        if saveTimes:
+            art[i] = stationtime
+
+        #Example of getting date from saved stationtime/testing it works
+        if False:
+            print(f'Datetime event is ' + datetime.utcfromtimestamp(art[i]).strftime('%Y-%m-%d %H:%M:%S'))
+
+        triggerTimeAdjuster.run(evt, station, det)  #Run to cut any traces that are too long to be the length expected, based around trigger
+
+
         for ChId, channel in enumerate(station.iter_channels(use_channels=save_chans)):
 
 #Shouldn't need these anymore since I resample and length adjust before saving
@@ -107,7 +178,10 @@ def converter(nurFile, folder, type, save_chans, station_id = 1, blackout=False,
 #                channelResampler.run(evt, station, det, 1*units.GHz)
 #            print(f'channel sampling rate is now {channel.get_sampling_rate()}')
 #            channelLengthAdjuster.run(evt, station, channel_ids=[channel.get_id()])
-
+            if filter:
+                channelBandPassFilter.run(evt, station, det, passband=[BW[0], 1000*units.MHz], filter_type='butter', order=10)
+                channelBandPassFilter.run(evt, station, det, passband=[1*units.MHz, BW[1]], filter_type='butter', order=5)
+            channelStopFilter.run(evt, station, det, prepend=0*units.ns, append=0*units.ns)
 
             y = channel.get_trace()
             t = channel.get_times()
@@ -125,6 +199,8 @@ def converter(nurFile, folder, type, save_chans, station_id = 1, blackout=False,
             #Dim 1 = event number
             #Dim 2 = Channel identifier (0-X)
             #Dim 3 = Samples, 256 long, voltage trace
+            if normalize:
+                y = y / Vrms
             ary[i, ChId] = y
 
         if plot and i % 1000 == 0:
@@ -143,16 +219,24 @@ def converter(nurFile, folder, type, save_chans, station_id = 1, blackout=False,
     ary = ary[max_amp_mask]
     print(ary.shape)
     """
-#    np.save(f'Code/data/2ndpass/{folder}_{len(ary)}events_MaskedMaxAmp_part{part}.npy', ary)
-    np.save(f'Code/data/{folder}/{type}_{len(ary)}events_part{part}.npy', ary)
+#    np.save(f'DeepLearning/data/2ndpass/{folder}_{len(ary)}events_MaskedMaxAmp_part{part}.npy', ary)
+    saveName = f'Code/data/{folder}/{type}_{len(ary)}events_part{part}.npy'
+    print(f'Saving to {saveName}')
+    np.save(saveName, ary)
 
+    if saveTimes:
+        art = art[0:(count - max_events * part)]
+        saveTimes = f'Code/data/{folder}/DateTime_{type}_{max_events}events_part{part}.npy'
+        np.save(saveTimes, art)
+        
+    return
+        
 
 #file = '/Users/astrid/Desktop/st61_deeplearning/data/stn61_2of4trigger_noiseless_processed.nur'
-#ReflCrFiles = ['Code/data/4thpass/MB_old_100s_Refl_CRs_2500Evts_Noise_True_Amp_True_min0_max500.nur', 'Code/data/4thpass/MB_old_100s_Refl_CRs_2500Evts_Noise_True_Amp_True_min500_max1000.nur',
-#               'Code/data/4thpass/MB_old_100s_Refl_CRs_2500Evts_Noise_True_Amp_True_min1000_max1500.nur', 'Code/data/4thpass/MB_old_100s_Refl_CRs_2500Evts_Noise_True_Amp_True_min1500_max2000.nur']
+#ReflCrFiles = ['DeepLearning/data/2ndpass/MB_old_100s_Refl_CRs_2500Evts_Noise_True_Amp_True_min0_max500.nur', 'DeepLearning/data/2ndpass/MB_old_100s_Refl_CRs_2500Evts_Noise_True_Amp_True_min500_max1000.nur',
+#               'DeepLearning/data/2ndpass/MB_old_100s_Refl_CRs_2500Evts_Noise_True_Amp_True_min1000_max1500.nur', 'DeepLearning/data/2ndpass/MB_old_100s_Refl_CRs_2500Evts_Noise_True_Amp_True_min1500_max2000.nur']
 folder = "4thpass"
 MB_RCR_path = f"Code/data/{folder}/"
-station = 13  # Change this value to match the station you are working with
 
 ReflCrFiles = []
 for filename in os.listdir(MB_RCR_path):
@@ -164,12 +248,12 @@ for filename in os.listdir(MB_RCR_path):
         ReflCrFiles.append(os.path.join(MB_RCR_path, filename))
 
 saveChannels = [4, 5, 6, 7]
-det = generic_detector.GenericDetector(json_filename=f'Config/gen2_MB_old_footprint576m_infirn.json', assume_inf=False, antenna_by_depth=False, default_station=1)
+det = generic_detector.GenericDetector(json_filename=f'Code/Config/gen2_MB_old_footprint576m_infirn.json', assume_inf=False, antenna_by_depth=False, default_station=1)
 det.update(datetime.datetime(2018, 10, 1))
 
 converter(ReflCrFiles, folder,'ReflCR', saveChannels, 1, det, plot=False)
 
-#quit()
+quit()
 
 #Neutrino evt conversion
 """
@@ -186,14 +270,14 @@ converter(NuFiles, 'Nu', saveChannels, 1, det_nu)
 
 #Existing data conversion
 
-Station{station}_path = "../leshanz/data_for_others/2022_reflected_cr_search/data/station_{station}/"
+station13_path = "/pub/jingyz34/data/station_nur/station_13/"
 
 DataFiles = []
-for filename in os.listdir(Station{station}_path):
+for filename in os.listdir(station13_path):
     if filename.endswith('_statDatPak.root.nur'):
         continue
     else:
-        DataFiles.append(os.path.join(Station{station}_path, filename))
+        DataFiles.append(os.path.join(station13_path, filename))
 
 saveChannels = [0, 1, 2, 3]
-converter(DataFiles, folder, 'Station{station}_Data', saveChannels, station_id=station, blackout=True, plot=False)
+converter(DataFiles, folder, 'Station13_Data', saveChannels, station_id = 13, blackout=True, plot=False)
