@@ -15,6 +15,7 @@ from NuRadioReco.modules.io import NuRadioRecoio
 import numpy as np
 import os
 from NuRadioReco.detector import generic_detector
+from NuRadioReco.detector import detector
 import datetime
 import json
 
@@ -105,13 +106,8 @@ def getVrms(nurFile, save_chans, station_id, check_forced=False, max_check=1000,
 
     return Vrms_sum / num_avg
 
-
-        
-
-
-
 def converter(nurFile, folder, type, save_chans, station_id = 1, blackout=False, det=None, plot=False,
-              filter=True, BW=[80*units.MHz, 500*units.MHz], normalize=False, saveTimes=False):
+              filter=True, BW=[80*units.MHz, 500*units.MHz], normalize=False, saveTimes=False, timeAdjust=True):
     count = 0
     part = 0
     max_events = 1000000
@@ -137,8 +133,8 @@ def converter(nurFile, folder, type, save_chans, station_id = 1, blackout=False,
         if inBlackoutTime(stationtime, blackoutTimes):
             continue
 
-
-        count = i
+        #count = i
+        count = i - max_events * part
         if count % 1000 == 0:
             print(f'{count} events processed...')
 #        if count % max_events == 0 and not count == 0:
@@ -158,6 +154,8 @@ def converter(nurFile, folder, type, save_chans, station_id = 1, blackout=False,
                 art = np.zeros(max_events)
         station = evt.get_station(station_id)
         i = i - max_events * part
+        count = i
+        #i = i - max_events * part
 
         if saveTimes:
             art[i] = stationtime
@@ -166,8 +164,8 @@ def converter(nurFile, folder, type, save_chans, station_id = 1, blackout=False,
         if False:
             print(f'Datetime event is ' + datetime.utcfromtimestamp(art[i]).strftime('%Y-%m-%d %H:%M:%S'))
 
-        triggerTimeAdjuster.run(evt, station, det)  #Run to cut any traces that are too long to be the length expected, based around trigger
-
+        if timeAdjust:
+            triggerTimeAdjuster.run(evt, station, det)  #Run to cut any traces that are too long to be the length expected, based around trigger
 
         for ChId, channel in enumerate(station.iter_channels(use_channels=save_chans)):
 
@@ -228,32 +226,31 @@ def converter(nurFile, folder, type, save_chans, station_id = 1, blackout=False,
         art = art[0:(count - max_events * part)]
         saveTimes = f'Code/data/{folder}/DateTime_{type}_{max_events}events_part{part}.npy'
         np.save(saveTimes, art)
-        
     return
-        
 
 #file = '/Users/astrid/Desktop/st61_deeplearning/data/stn61_2of4trigger_noiseless_processed.nur'
-#ReflCrFiles = ['DeepLearning/data/2ndpass/MB_old_100s_Refl_CRs_2500Evts_Noise_True_Amp_True_min0_max500.nur', 'DeepLearning/data/2ndpass/MB_old_100s_Refl_CRs_2500Evts_Noise_True_Amp_True_min500_max1000.nur',
-#               'DeepLearning/data/2ndpass/MB_old_100s_Refl_CRs_2500Evts_Noise_True_Amp_True_min1000_max1500.nur', 'DeepLearning/data/2ndpass/MB_old_100s_Refl_CRs_2500Evts_Noise_True_Amp_True_min1500_max2000.nur']
+#ReflCrFiles = ['DeepLearning/data/2ndpass/MB_old_100s_Refl_CRs_2500Evts_Noise_True_Amp_True_min0_max500.nur', 'DeepLearning/data/2ndpass/MB_old_100s_Refl_CRs_2500Evts_Noise_True_Amp_True$
+#               'DeepLearning/data/2ndpass/MB_old_100s_Refl_CRs_2500Evts_Noise_True_Amp_True_min1000_max1500.nur', 'DeepLearning/data/2ndpass/MB_old_100s_Refl_CRs_2500Evts_Noise_True_Amp_$
 folder = "4thpass"
-MB_RCR_path = f"Code/data/{folder}/"
+MB_RCR_path = f"Code/data/{folder}/simulatedRCRs/200s/"
+series = '200s'     #Alternative is 200s
 
 ReflCrFiles = []
 for filename in os.listdir(MB_RCR_path):
 #    if filename.endswith('_statDatPak.root.nur'):
 #        continue
 #    else:
-#        DataFiles.append(os.path.join(station13_path, filename))
+#        DataFiles.append(os.path.join(station14_path, filename))
     if filename.startswith('MB_old'):
         ReflCrFiles.append(os.path.join(MB_RCR_path, filename))
-
 saveChannels = [4, 5, 6, 7]
-det = generic_detector.GenericDetector(json_filename=f'Code/Config/gen2_MB_old_footprint576m_infirn.json', assume_inf=False, antenna_by_depth=False, default_station=1)
+
+det = detector.Detector(json_filename=f'Code/Config/gen2_MB_old_{series}_footprint576m_infirn.json')
 det.update(datetime.datetime(2018, 10, 1))
 
-converter(ReflCrFiles, folder,'ReflCR', saveChannels, 1, det, plot=False)
+converter(ReflCrFiles, folder,'ReflCR', saveChannels, 1, det=det, plot=False, timeAdjust=True)
 
-quit()
+#quit()
 
 #Neutrino evt conversion
 """
@@ -270,14 +267,14 @@ converter(NuFiles, 'Nu', saveChannels, 1, det_nu)
 
 #Existing data conversion
 
-station13_path = "/pub/jingyz34/data/station_nur/station_13/"
+station14_path = "/pub/ariannaproject/station_nur/station_14/"
 
 DataFiles = []
-for filename in os.listdir(station13_path):
+for filename in os.listdir(station14_path):
     if filename.endswith('_statDatPak.root.nur'):
         continue
     else:
-        DataFiles.append(os.path.join(station13_path, filename))
+        DataFiles.append(os.path.join(station14_path, filename))
 
 saveChannels = [0, 1, 2, 3]
-converter(DataFiles, folder, 'Station13_Data', saveChannels, station_id = 13, blackout=True, plot=False)
+converter(DataFiles, folder, 'Station14_Data', saveChannels, station_id = 14, blackout=True, plot=False, timeAdjust=False)
