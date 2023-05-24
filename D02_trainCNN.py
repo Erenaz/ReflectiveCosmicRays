@@ -1,20 +1,43 @@
 import os
-import pickle
-from glob import glob
-from matplotlib import pyplot as plt
 import numpy as np
-from tensorflow import keras
+from numpy import save, load
+import keras
+import time
+#can do tensorflow.keras if they have tensorflow
 from keras import optimizers
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Flatten, Reshape, GlobalAveragePooling1D, Activation, GlobalAveragePooling2D
 from keras.layers import Conv2D, MaxPooling2D, Conv1D, MaxPooling1D
 from keras.utils import np_utils
+from matplotlib.lines import Line2D
+import matplotlib.dates as mdates
 import random
-import math
-
+import datetime
+from glob import glob
 import matplotlib
-matplotlib.use('Agg')
+matplotlib.use('agg')
+import matplotlib.pyplot as plt
 
+def plotTrace(traces, title, saveLoc, show=False):
+    f, ax = plt.subplots(4,1)
+    for chID, trace in enumerate(traces):
+        ax[chID].plot(trace)
+    plt.suptitle(title)
+    if show:
+        plt.show()
+    else:
+        plt.savefig(saveLoc, format='png')
+    return
+
+def plotTimeStrip(times, vals, title, saveLoc):
+    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%m/%d/%Y'))
+    plt.gca().xaxis.set_major_locator(mdates.DayLocator())
+    plt.scatter(times,vals, alpha=0.5)
+    plt.gcf().autofmt_xdate()
+    plt.title(title)
+    plt.savefig(saveLoc, format='png')
+
+#input path and file names and station ID.
 round = '4thpass'
 path = f'Code/data/{round}/'
 station = 14  # Change this value to match the station you are working with
@@ -22,110 +45,87 @@ station = 14  # Change this value to match the station you are working with
 # Change this value to control how many times the simulation file is used
 simulation_multiplier = 1  # Use the simulation file twice for training
 
-# Get a list of the RCR files
+# Get a list of all the RCR files
 RCR_files = glob(os.path.join(path, "ReflCR_5730events_part0.npy"))
 RCR = np.empty((0, 4, 256))
 for file in RCR_files:
-    RCR_data = np.load(file)[0:5000, 0:4]
+    RCR_data = np.load(file)[5000:, 0:4]
     RCR_data = np.vstack([RCR_data] * simulation_multiplier)  # Stack the data multiple times
     RCR = np.concatenate((RCR, RCR_data))
-
-TrainCut = len(RCR)
-
-# Get a list of all the Noise files
+    
+# Get a list of all the noise files
 Noise_files = glob(os.path.join(path, f"Station{station}_Data_*_part*.npy"))
 Noise = np.empty((0, 4, 256))
 for file in Noise_files:
-    Noise = np.concatenate((Noise, np.load(file)[0:5000, 0:4]))
+    Noise = np.concatenate((Noise, np.load(file)[5000:,0:4]))
 
-index = np.arange(0, len(Noise), 1)
-np.random.shuffle(index)
-Noise = Noise[index]
-Noise = Noise[0:TrainCut, 0:4]
+RCR = np.reshape(RCR, (RCR.shape[0], RCR.shape[1],RCR.shape[2],1))
+Noise = np.reshape(Noise, (Noise.shape[0], Noise.shape[1],Noise.shape[2],1))
 
-#make signal the same shape as the noise data, if needed
-#Reuse one set multiple times to match larger dataset of the other
-# signal = np.vstack((signal,signal,signal,signal))
-# signal = signal[0:noise.shape[0]]
+haveTimes = False
+if haveTimes == True:
+    #I don't think this needs reshaping, maybe it does like above
+    times = np.load(os.path.join(path, "Put_time_file_here"))[10000:]
+    for iT, t in enumerate(times):
+        times[iT] = datetime.utcfromtimestamp(t).strftime('%Y-%m-%d %H:%M:%S')
 
-print(RCR.shape)
-#print(Nu.shape)
-print(Noise.shape)
+#input path to trained h5 model
+model = keras.models.load_model(f'Code/h5_models/14/{round}_trained_CNN_1l-10-8-10_do0.5_fltn_sigm_valloss_p4_measNoise0-20k_0-5ksigNU-Scaled_shuff_monitortraining_0_{simulation_multiplier}.h5')
 
-x = np.vstack((RCR, Noise))  # shape is (200000, 1, 240)
-  
-n_samples = x.shape[2]
-n_channels = x.shape[1]
-x = np.expand_dims(x, axis=-1)
-#Zeros are noise, 1 signal
-#y is output array
-y = np.vstack((np.zeros((RCR.shape[0], 1)), np.ones((Noise.shape[0], 1))))
-s = np.arange(x.shape[0])
-np.random.shuffle(s)
-x = x[s]
-y = y[s]
-print(x.shape)
+prob_RCR = model.predict(RCR)
+prob_Noise = model.predict(Noise)
+                
+plotRandom = True
+if plotRandom == True:
+    for iE, Noi in enumerate(Noise):
+        output = 1 - prob_Noise[iE][0]
+        if output > 0.95:
+            print(f'output {output}')
+            plotTrace(Noi, f"Noise {iE}, Output {output:.2f}",f"Code/data/4thpass/Station_14/Noise/Noise_{iE}_Output_{output:.2f}_Station{station}.png")
+    for iE, rcr in enumerate(RCR):
+        if iE % 1000 == 0:
+            output = 1 - prob_RCR[iE][0]
+            if output > 0.95:
+                plotTrace(rcr, f"RCR {iE}, Output {output:.2f} " + times[iE],f"Code/data/4thpass/Station_14/RCR/RCR_{iE}_Output_{output:.2f}_Station{station}.png")
 
-BATCH_SIZE = 32
-#Iterate over many epochs to see which has lowest loss
-#Then change epochs to be at lowest for final result
-EPOCHS = 30
+max_amps = np.zeros(len(prob_Noise))
+for iC, trace in enumerate(Noise):
+    max_amps[iC] = np.max(trace)
+max_amps_RCR = np.zeros(len(prob_RCR))
+for iC, trace in enumerate(RCR):
+    max_amps_RCR[iC] = np.max(trace)
 
-#This automatically saves when loss increases over a number of patience cycles
-callbacks_list = [keras.callbacks.EarlyStopping(monitor='val_loss', patience=2)]
-def training(j):
-    model = Sequential()
-    model.add(Conv2D(10, (4, 10), activation='relu', input_shape=(n_channels, n_samples, 1)))
-    model.add(Dropout(0.5))
-    model.add(Flatten())
-    model.add(Dense(1, activation='sigmoid'))
-    model.compile(optimizer='Adam',
-                  loss='binary_crossentropy',
-                  metrics=['accuracy'])
+prob_Noise = 1 - prob_Noise
+prob_RCR = 1 - prob_RCR
+plt.scatter(max_amps, prob_Noise, label='StationData')
+plt.scatter(max_amps_RCR, prob_RCR, label='SimRCR')
+plt.ylabel('Network Output - 1 = RCR')
+plt.xlabel('Max amp of channels')
+plt.legend()
+plt.title(f'Station {station} Training')
+plt.savefig(path+f'Station_14/MaxAmpsOutputStation{station}_M{simulation_multiplier}.png', format='png')
+plt.clf()
+#plt.show()
 
-    history = model.fit(x, y, validation_split=0.2, epochs=EPOCHS, batch_size=BATCH_SIZE, verbose=1, callbacks=callbacks_list)
+if haveTimes:
+    plotTimeStrip(times, prob_Noise, f'Station 14', saveLoc=path+'plots/Stn14_TimeStrip.png')
 
-    # Save the history as a pickle file
-    with open(f'Code/h5_models/14/history_{j}_{simulation_multiplier}.pickle', 'wb') as f:
-        pickle.dump(history.history, f)
+fig = plt.figure()
+ax = fig.add_subplot(111)
 
-    # Plot the training and validation loss
-    plt.figure(figsize=(6, 4))
-    plt.plot(history.history['loss'], label='Training Loss')
-    plt.plot(history.history['val_loss'], label='Validation Loss')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.legend()
-    plt.title(f'Model {j+1}: Simulation File Used {simulation_multiplier} Times')
+dense_val = False
+ax.hist(prob_Noise, bins=20, range=(0, 1), histtype='step', color='red', linestyle='solid', label='Station_14Data', density=dense_val)
+ax.hist(prob_RCR, bins=20, range=(0, 1), histtype='step',color='blue', linestyle='solid',label='SimRCR',density = dense_val)
 
-    # Save the loss plot as an image file
-    plt.savefig(f'Code/h5_models/14/loss_plot_{j}_{simulation_multiplier}.png')
 
-    # Plot the training and validation accuracy
-    plt.figure(figsize=(6, 4))
-    plt.plot(history.history['accuracy'], label='Training Accuracy')
-    plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
-    plt.xlabel('Epoch')
-    plt.ylabel('Accuracy')
-    plt.legend()
-    plt.title(f'Model {j+1}: Simulation File Used {simulation_multiplier} Times')
-
-    # Save the accuracy plot as an image file
-    plt.savefig(f'Code/h5_models/14/accuracy_plot_{j}_{simulation_multiplier}.png')
-
-    plt.show()
-
-    model.summary()
-
-    # Evaluate the model on the validation set
-    val_loss, val_acc = model.evaluate(x[-int(0.2 * len(x)):], y[-int(0.2 * len(y)):], verbose=0)
-    print(f'Validation Loss: {val_loss}')
-    print(f'Validation Accuracy: {val_acc}')
-
-    #input the path and file you'd like to save the model as (in h5 format)
-    model.save(f'Code/h5_models/14/{round}_trained_CNN_1l-10-8-10_do0.5_fltn_sigm_valloss_p4_measNoise0-20k_0-5ksigNU-Scaled_shuff_monitortraining_{j}_{simulation_multiplier}.h5')
-  
-#can increase the loop for more trainings is you want to see variation
-for j in range(1):
-  training(j)
-
+plt.xlabel('network output', fontsize=18)
+plt.ylabel('events', fontsize=18)
+plt.xticks(size=18)
+plt.yticks(size=18)
+plt.yscale('log')
+plt.title('Station {station}')
+handles, labels = ax.get_legend_handles_labels()
+new_handles = [Line2D([], [], c=h.get_edgecolor(), linestyle=h.get_linestyle()) for h in handles]
+plt.legend(loc='upper center', handles=new_handles, labels=labels, fontsize=18)
+#plt.show()
+plt.savefig(path+f'Station_14/Station{station}AnalysisOutput_M{simulation_multiplier}.png', format='png')
