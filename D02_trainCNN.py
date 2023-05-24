@@ -17,13 +17,13 @@ matplotlib.use('Agg')
 
 round = '4thpass'
 path = f'Code/data/{round}/'
-station = 13  # Change this value to match the station you are working with
+station = 14  # Change this value to match the station you are working with
 
 # Change this value to control how many times the simulation file is used
-simulation_multiplier = 2  # Use the simulation file twice for training
+simulation_multiplier = 1  # Use the simulation file twice for training
 
 # Get a list of the RCR files
-RCR_files = glob(os.path.join(path, "ReflCR_5996events_part0.npy"))
+RCR_files = glob(os.path.join(path, "ReflCR_5730events_part0.npy"))
 RCR = np.empty((0, 4, 256))
 for file in RCR_files:
     RCR_data = np.load(file)[0:5000, 0:4]
@@ -36,7 +36,7 @@ TrainCut = len(RCR)
 Noise_files = glob(os.path.join(path, f"Station{station}_Data_*_part*.npy"))
 Noise = np.empty((0, 4, 256))
 for file in Noise_files:
-    Noise = np.concatenate((Noise, np.load(file)[0:50000, 0:4]))
+    Noise = np.concatenate((Noise, np.load(file)[0:5000, 0:4]))
 
 index = np.arange(0, len(Noise), 1)
 np.random.shuffle(index)
@@ -69,7 +69,7 @@ print(x.shape)
 BATCH_SIZE = 32
 #Iterate over many epochs to see which has lowest loss
 #Then change epochs to be at lowest for final result
-EPOCHS = 50
+EPOCHS = 30
 
 #This automatically saves when loss increases over a number of patience cycles
 callbacks_list = [keras.callbacks.EarlyStopping(monitor='val_loss', patience=2)]
@@ -86,7 +86,7 @@ def training(j):
     history = model.fit(x, y, validation_split=0.2, epochs=EPOCHS, batch_size=BATCH_SIZE, verbose=1, callbacks=callbacks_list)
 
     # Save the history as a pickle file
-    with open(f'Code/h5_models/13/history_{j}_{simulation_multiplier}.pickle', 'wb') as f:
+    with open(f'Code/h5_models/14/history_{j}_{simulation_multiplier}.pickle', 'wb') as f:
         pickle.dump(history.history, f)
 
     # Plot the training and validation loss
@@ -99,7 +99,7 @@ def training(j):
     plt.title(f'Model {j+1}: Simulation File Used {simulation_multiplier} Times')
 
     # Save the loss plot as an image file
-    plt.savefig(f'Code/h5_models/13/loss_plot_{j}_{simulation_multiplier}.png')
+    plt.savefig(f'Code/h5_models/14/loss_plot_{j}_{simulation_multiplier}.png')
 
     # Plot the training and validation accuracy
     plt.figure(figsize=(6, 4))
@@ -111,7 +111,7 @@ def training(j):
     plt.title(f'Model {j+1}: Simulation File Used {simulation_multiplier} Times')
 
     # Save the accuracy plot as an image file
-    plt.savefig(f'Code/h5_models/13/accuracy_plot_{j}_{simulation_multiplier}.png')
+    plt.savefig(f'Code/h5_models/14/accuracy_plot_{j}_{simulation_multiplier}.png')
 
     plt.show()
 
@@ -123,8 +123,9 @@ def training(j):
     print(f'Validation Accuracy: {val_acc}')
 
     #input the path and file you'd like to save the model as (in h5 format)
-    model.save(f'Code/h5_models/13/{round}_trained_CNN_1l-10-8-10_do0.5_fltn_sigm_valloss_p4_measNoise0-20k_0-5ksigNU-Scaled_shuff_monitortraining_{j}_{simulation_multiplier}.h5')
+    model.save(f'Code/h5_models/14/{round}_trained_CNN_1l-10-8-10_do0.5_fltn_sigm_valloss_p4_measNoise0-20k_0-5ksigNU-Scaled_shuff_monitortraining_{j}_{simulation_multiplier}.h5')
   
 #can increase the loop for more trainings is you want to see variation
 for j in range(1):
   training(j)
+
