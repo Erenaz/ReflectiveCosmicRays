@@ -45,8 +45,8 @@ def plotTrace(traces, title, saveLoc, sampling_rate=2, show=False):
     axs[0][0].tick_params(labelsize=13)
     axs[0][1].tick_params(labelsize=13)
     axs[0][0].set_ylabel(f'ch{0}',labelpad=3,rotation=0,fontsize=13)
-    axs[c][0].set_xlim(-3,260 / sampling_rate)
-    axs[c][1].set_xlim(-3, 500)
+    axs[chID][0].set_xlim(-3,260 / sampling_rate)
+    axs[chID][1].set_xlim(-3, 500)
 
     fig.text(0.03, 0.5, 'voltage [V]', ha='center', va='center', rotation='vertical',fontsize=18)
     plt.xticks(size=13)
@@ -177,13 +177,13 @@ plt.clf()
 
 haveTimes = True
 if haveTimes:
-    plotTimeStrip(datetime_chunk, prob_Noise, f'Station 14', saveLoc=path+'plots/Stn14_TimeStrip.png')
+    plotTimeStrip(all_datetimes, all_prob_Noise, f'Station 14', saveLoc=path+'plots/Stn14_TimeStrip.png')
 
 fig = plt.figure()
 ax = fig.add_subplot(111)
 
 dense_val = False
-ax.hist(prob_Noise, bins=20, range=(0, 1), histtype='step', color='red', linestyle='solid', label='Station_14Data', density=dense_val)
+ax.hist(all_prob_Noise, bins=20, range=(0, 1), histtype='step', color='red', linestyle='solid', label='Station_14Data', density=dense_val)
 ax.hist(prob_RCR, bins=20, range=(0, 1), histtype='step',color='blue', linestyle='solid',label='SimRCR',density = dense_val)
 
 plt.xlabel('network output', fontsize=18)
