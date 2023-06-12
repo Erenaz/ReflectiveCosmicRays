@@ -18,17 +18,19 @@ from glob import glob
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
+from NuRadioReco.utilities import units, fft
+
 
 def plotTrace(traces, title, saveLoc, sampling_rate=2, show=False):
     #Sampling rate should be in GHz
-
     x = np.linspace(1, int(256 / sampling_rate), num=256)
     x_freq = np.fft.rfftfreq(len(x), d=(1 / sampling_rate*units.GHz)) / units.MHz
 
     fig, axs = plt.subplots(nrows=4, ncols=2, sharex=False)
     for chID, trace in enumerate(traces):
-        ax[chID][0].plot(x, trace)
-        ax[chID][1].plot(x_freq, np.abs(fft.time2freq(trace, sampling_rate*units.GHz)))
+        trace = trace.squeeze()
+        axs[chID][0].plot(x, trace)
+        axs[chID][1].plot(x_freq, np.abs(fft.time2freq(trace, sampling_rate*units.GHz)))
 
     axs[3][0].set_xlabel('time [ns]',fontsize=18)
     axs[3][1].set_xlabel('Frequency [MHz]',fontsize=18)
