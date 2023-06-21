@@ -110,7 +110,7 @@ EPOCHS = 100 #Then change epochs to be at lowest for final result
 callbacks_list = [keras.callbacks.EarlyStopping(monitor='val_loss', patience=2)]
 def training(j):
     model = Sequential()
-    model.add(Conv2D(20, (4, 10), activation='relu', input_shape=(n_channels, n_samples, 1))) # Could be 10, (4, 256/?)
+    model.add(Conv2D(20, (4, 10), activation='relu', input_shape=(n_channels, n_samples, 1)))
     model.add(Conv2D(10, (1, 10), activation='relu'))
     model.add(Dropout(0.5))
     model.add(Flatten())
