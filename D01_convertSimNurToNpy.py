@@ -3,31 +3,40 @@ import json
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+
 from NuRadioReco.utilities import units, fft
 from NuRadioReco.modules import channelResampler as CchannelResampler
 from NuRadioReco.modules.ARIANNA import hardwareResponseIncorporator as ChardwareResponseIncorporator
 from NuRadioReco.modules import channelTimeWindow as cTWindow
+from NuRadioReco.modules import channelBandPassFilter as channelBandPassFilterModule
+from NuRadioReco.modules import channelStopFilter
+from NuRadioReco.modules import channelSignalReconstructor as channelSignalReconstructorModule
+from NuRadioReco.modules import correlationDirectionFitter as correlationDirectionFitterModule
+from NuRadioReco.modules import triggerTimeAdjuster as triggerTimeAdjusterModule
+from NuRadioReco.modules import channelLengthAdjuster as channelLengthAdjusterModule
 from NuRadioReco.framework.parameters import stationParameters as stnp
 from NuRadioReco.framework.parameters import channelParameters as chp
 from NuRadioReco.framework.parameters import showerParameters as shp
 from NuRadioReco.modules.io import NuRadioRecoio
 from NuRadioReco.detector import generic_detector
+from NuRadioReco.detector import detector
+from NuRadioReco.utilities.cr_flux import get_cr_event_rate
 
 # Initialize modules
 channelResampler = CchannelResampler.channelResampler()
 channelResampler.begin(debug=False)
-channelBandPassFilter = NuRadioReco.modules.channelBandPassFilter.channelBandPassFilter()
+channelBandPassFilter = channelBandPassFilterModule.channelBandPassFilter()
 hardwareResponseIncorporator = ChardwareResponseIncorporator.hardwareResponseIncorporator()
 hardwareResponseIncorporator.begin(debug=False)
-channelSignalReconstructor = NuRadioReco.modules.channelSignalReconstructor.channelSignalReconstructor()
-correlationDirectionFitter = NuRadioReco.modules.correlationDirectionFitter.correlationDirectionFitter()
+channelSignalReconstructor = channelSignalReconstructorModule.channelSignalReconstructor()
+correlationDirectionFitter = correlationDirectionFitterModule.correlationDirectionFitter()
 correlationDirectionFitter.begin(debug=False)
-channelStopFilter = NuRadioReco.modules.channelStopFilter.channelStopFilter()
+channelStopFilter = channelStopFilter.channelStopFilter()
 cTW = cTWindow.channelTimeWindow()
 cTW.begin(debug=False)
-triggerTimeAdjuster = NuRadioReco.modules.triggerTimeAdjuster.triggerTimeAdjuster()
+triggerTimeAdjuster = triggerTimeAdjusterModule.triggerTimeAdjuster()
 triggerTimeAdjuster.begin(pre_trigger_time=30 * units.ns)
-channelLengthAdjuster = NuRadioReco.modules.channelLengthAdjuster.channelLengthAdjuster()
+channelLengthAdjuster = channelLengthAdjusterModule.channelLengthAdjuster()
 channelLengthAdjuster.begin()
 
 # Load blackout times
